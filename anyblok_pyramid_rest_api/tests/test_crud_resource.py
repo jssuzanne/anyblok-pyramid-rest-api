@@ -595,82 +595,82 @@ class CrudResourceAction:
         return customer
 
     def test_collection_action(self):
-        """Example collection POST /customers/v*/action/action1"""
-        collection_path = self.collection_path + '/action/action1'
+        """Example collection POST /customers/v*/execute/action1"""
+        collection_path = self.collection_path + '/execute/action1'
         response = self.webserver.post(collection_path)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body, 'Action 1')
 
     def test_collection_action_post_on_path(self):
-        """Example collection POST /customers/v*/id/action/action1"""
+        """Example collection POST /customers/v*/{id}/execute/action1"""
         cu = self.create_customer()
-        path = self.path + '/action/action1'
+        path = self.path + '/execute/action1'
         fail = self.webserver.get(path % cu.id)
         self.assertEqual(fail.status_code, 404)
 
     def test_collection_action_get(self):
-        """Example collection GET /customers/v*/action/action1"""
-        collection_path = self.collection_path + '/action/action1'
+        """Example collection GET /customers/v*/execute/action1"""
+        collection_path = self.collection_path + '/execute/action1'
         fail = self.webserver.get(collection_path, status=404)
         self.assertEqual(fail.status_code, 404)
 
     def test_collection_action_put(self):
-        """Example collection PUT /customers/v*/action/action1"""
-        collection_path = self.collection_path + '/action/action1'
+        """Example collection PUT /customers/v*/execute/action1"""
+        collection_path = self.collection_path + '/execute/action1'
         fail = self.webserver.put(collection_path, status=404)
         self.assertEqual(fail.status_code, 404)
 
     def test_collection_action_patch(self):
-        """Example collection PATCH /customers/v*/action/action1"""
-        collection_path = self.collection_path + '/action/action1'
+        """Example collection PATCH /customers/v*/execute/action1"""
+        collection_path = self.collection_path + '/execute/action1'
         fail = self.webserver.patch(collection_path, status=404)
         self.assertEqual(fail.status_code, 404)
 
     def test_collection_action_delete(self):
-        """Example collection DELETE /customers/v*/action/action1"""
-        collection_path = self.collection_path + '/action/action1'
+        """Example collection DELETE /customers/v*/execute/action1"""
+        collection_path = self.collection_path + '/execute/action1'
         fail = self.webserver.delete(collection_path, status=404)
         self.assertEqual(fail.status_code, 404)
 
     def test_action(self):
-        """Example POST /customers/v*/{id}/action/action2"""
+        """Example POST /customers/v*/{id}/execute/action2"""
         cu = self.create_customer()
-        path = self.path + '/action/action2'
+        path = self.path + '/execute/action2'
         response = self.webserver.get(path % cu.id)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json_body, 'Action 2')
 
     def test_action_post_on_collection_path(self):
-        """Example collection POST /customers/v*/action/action2"""
-        path = self.collection_path + '/action/action2'
+        """Example collection POST /customers/v*/execute/action2"""
+        path = self.collection_path + '/execute/action2'
         fail = self.webserver.get(path, status=404)
         self.assertEqual(fail.status_code, 404)
 
     def test_action_get(self):
-        """Example GET /customers/v*/{id}/action/action2"""
+        """Example GET /customers/v*/{id}/execute/action2"""
         cu = self.create_customer()
-        path = self.path + '/action/action2'
+        path = self.path + '/execute/action2'
         fail = self.webserver.get(path % cu.id, status=404)
         self.assertEqual(fail.status_code, 404)
 
     def test_action_put(self):
-        """Example PUT /customers/v*/{id}/action/action2"""
+        """Example PUT /customers/v*/{id}/execute/action2"""
         cu = self.create_customer()
-        path = self.path + '/action/action2'
+        path = self.path + '/execute/action2'
         fail = self.webserver.put(path % cu.id, status=404)
         self.assertEqual(fail.status_code, 404)
 
     def test_action_patch(self):
-        """Example PATCH /customers/v*/{id}/action/action2"""
+        """Example PATCH /customers/v*/{id}/execute/action2"""
         cu = self.create_customer()
-        path = self.path + '/action/action2'
+        path = self.path + '/execute/action2'
         fail = self.webserver.patch(path % cu.id, status=404)
         self.assertEqual(fail.status_code, 404)
 
     def test_action_delete(self):
-        """Example DELETE /customers/v*/{id}/action/action2"""
+        """Example DELETE /customers/v*/{id}/execute/action2"""
         cu = self.create_customer()
-        path = self.path + '/action/action2'
+        path = self.path + '/execute/action2'
         fail = self.webserver.delete(path % cu.id, status=404)
         self.assertEqual(fail.status_code, 404)
 
