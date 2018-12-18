@@ -445,6 +445,17 @@ class CrudResource:
         schema = Schema(**opts)
         return schema.dump(entry)
 
+    @property
+    def body(self):
+        return self.request.validated.get('body', self.request.validated)
+
+    def get_querystring(self, rest_action):
+        Model = self.get_model(rest_action)
+        query = self.update_collection_get_filter(Model.query())
+        query = update_from_query_string(
+            self.request, Model, query, self.adapter)
+        return query
+
     @cornice_view(validators=(collection_get_validator,), permission="read")
     def collection_get(self):
         if not self.has_collection_get:
@@ -453,10 +464,7 @@ class CrudResource:
         if self.request.errors:
             return
 
-        Model = self.get_model('collection_get')
-        query = self.update_collection_get_filter(Model.query())
-        query = update_from_query_string(
-            self.request, Model, query, self.adapter)
+        query = self.get_querystring('collection_get')
         if not query.count():
             return []
 
@@ -473,12 +481,11 @@ class CrudResource:
         if self.request.errors:
             return
 
-        body = self.request.validated.get('body', self.request.validated)
         item = None
-        if body:
+        if self.body:
             Model = self.get_model('collection_post')
             with saved_errors_in_request(self.request):
-                item = self.create(Model, params=body)
+                item = self.create(Model, params=self.body)
         else:
             self.request.errors.add(
                 'body', '400 bad request',
@@ -541,9 +548,8 @@ class CrudResource:
         Model = self.get_model('patch')
         item = get_item(self.request, Model)
         if item:
-            body = self.request.validated.get('body', self.request.validated)
             with saved_errors_in_request(self.request):
-                self.update(item, params=body)
+                self.update(item, params=self.body)
 
             return self.serialize('patch', item)
 
@@ -560,9 +566,8 @@ class CrudResource:
         Model = self.get_model('put')
         item = get_item(self.request, Model)
         if item:
-            body = self.request.validated.get('body', self.request.validated)
             with saved_errors_in_request(self.request):
-                self.update(item, params=body)
+                self.update(item, params=self.body)
 
             return self.serialize('put', item)
 
