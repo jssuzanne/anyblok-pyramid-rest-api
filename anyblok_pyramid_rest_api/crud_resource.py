@@ -9,7 +9,7 @@
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
 from anyblok_marshmallow import SchemaWrapper
-from cornice.resource import view as cornice_view
+from cornice.resource import view as cornice_view, add_resource
 from pyramid.security import Deny, Allow, Everyone, ALL_PERMISSIONS
 from pyramid.httpexceptions import HTTPUnauthorized, HTTPNotFound
 from anyblok_pyramid_rest_api.querystring import QueryString
@@ -162,6 +162,20 @@ def delete_item(request, Model):
         with saved_errors_in_request(request):
             item.delete()
 
+
+def add_execute_on_crud_resource(cls, **kwargs):
+    services = cls._services
+    return cls
+
+
+def resource(depth=2, **kwargs):
+
+    def wrapper(cls):
+        klass = add_resource(cls, depth, **kwargs)
+        klass = add_execute_on_crud_resource(klass, **kwargs)
+        return klass
+
+    return wrapper
 
 # HOOK
 # * deactivate some access
@@ -503,3 +517,11 @@ class CrudResource:
                 self.update(item, params=body)
 
             return self.serialize('put', item)
+
+    @classmethod
+    def execute(cls, name, collection=False, schema=None):
+
+        def wrapper(method):
+            return method
+
+        return wrapper
