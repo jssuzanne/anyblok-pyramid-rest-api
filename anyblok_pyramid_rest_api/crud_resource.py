@@ -8,15 +8,19 @@
 # This Source Code Form is subject to the terms of the Mozilla Public License,
 # v. 2.0. If a copy of the MPL was not distributed with this file,You can
 # obtain one at http://mozilla.org/MPL/2.0/.
+# import venusian
 from anyblok_marshmallow import SchemaWrapper
-from cornice.resource import view as cornice_view, add_resource
+from cornice.resource import view as cornice_view, add_resource, add_view
+from cornice import Service
 from pyramid.security import Deny, Allow, Everyone, ALL_PERMISSIONS
 from pyramid.httpexceptions import HTTPUnauthorized, HTTPNotFound
 from anyblok_pyramid_rest_api.querystring import QueryString
 from types import MethodType
-from .validator import (collection_get_validator, collection_post_validator,
-                        get_validator, delete_validator, put_validator,
-                        patch_validator)
+from .validator import (
+    collection_get_validator, collection_post_validator, get_validator,
+    delete_validator, put_validator, patch_validator, execute_validator,
+    collection_execute_validator
+)
 from marshmallow import ValidationError
 from contextlib import contextmanager
 from logging import getLogger
@@ -164,7 +168,55 @@ def delete_item(request, Model):
 
 
 def add_execute_on_crud_resource(cls, **kwargs):
-    services = cls._services
+    services = {}
+    for attr in dir(cls):
+        method = getattr(cls, attr)
+        service_kwargs = kwargs.copy()
+        service_name = None
+
+        # auto-wire klass as its own view factory, unless one
+        # is explicitly declared.
+        if 'factory' not in kwargs:
+            service_kwargs['factory'] = cls
+
+        if (
+            hasattr(method, 'is_a_crud_resource_execute_on_collection') and
+            method.is_a_crud_resource_execute_on_collection
+        ):
+            service_name = 'collection_' + cls.__name__.lower() + '_execute_'
+            service_name += method.crud_resource_execute_name
+            service_kwargs['path'] = service_kwargs.pop('collection_path')
+        elif (
+            hasattr(method, 'is_a_crud_resource_execute') and
+            method.is_a_crud_resource_execute
+        ):
+            service_name = cls.__name__.lower() + '_execute_'
+            service_name += method.crud_resource_execute_name
+            del service_kwargs['collection_path']
+
+        if service_name:
+            service_kwargs['path'] += '/execute/'
+            service_kwargs['path'] += method.crud_resource_execute_name
+            service = services[service_name] = Service(
+                name=service_name, depth=2, **service_kwargs)
+            views = getattr(method, '__views__', [])
+            if views:
+                for view_args in views:
+                    service.add_view('post', attr, klass=cls, **view_args)
+            else:
+                service.add_view('post', attr, klass=cls)
+
+    cls._services.update(services)
+
+    # def callback(context, name, ob):
+    #     # get the callbacks registred by the inner services
+    #     # and call them from here when the @resource classes are being
+    #     # scanned by venusian.
+    #     for service in services.values():
+    #         config = context.config.with_package(info.module)
+    #         config.add_cornice_service(service)
+
+    # info = venusian.attach(cls, callback, category='pyramid', depth=2)
     return cls
 
 
@@ -226,6 +278,8 @@ def resource(depth=2, **kwargs):
 #   - path_patch: method of AnyBlokMarshmallow schema, by default use
 #     default_serialize_schema
 #   - path_put: method of AnyBlokMarshmallow schema, by default use
+#     default_serialize_schema
+#   - path_execute: method of AnyBlokMarshmallow schema, by default use
 #     default_serialize_schema
 # * get path opts
 #   - get_path_opts: method return dict of option to use
@@ -519,9 +573,22 @@ class CrudResource:
             return self.serialize('put', item)
 
     @classmethod
-    def execute(cls, name, collection=False, schema=None):
+    def execute(cls, name, permission=None, collection=False, **kwargs):
+        if permission is None:
+            permission = name
 
         def wrapper(method):
+            method.crud_resource_execute_name = name
+
+            if collection:
+                method.is_a_crud_resource_execute_on_collection = True
+                validators = (collection_execute_validator,)
+            else:
+                method.is_a_crud_resource_execute = True
+                validators = (execute_validator,)
+
+            add_view(method, validators=validators, permission=permission,
+                     **kwargs)
             return method
 
         return wrapper
