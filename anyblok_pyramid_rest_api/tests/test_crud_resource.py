@@ -599,7 +599,7 @@ class CrudResourceAction:
         collection_path = self.collection_path + '/execute/action1'
         response = self.webserver.post_json(collection_path, {'name': 'test'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json_body, 'Action 1')
+        self.assertEqual(response.json_body, 'test')
 
     def test_collection_action_missing_name(self):
         """Example FAIL collection POST /customers/v*/execute/action1"""
@@ -649,7 +649,7 @@ class CrudResourceAction:
         path = self.path + '/execute/action2'
         response = self.webserver.post_json(path % cu.id, {'name': 'test'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json_body, 'Action 2')
+        self.assertEqual(response.json_body, 'test')
 
     def test_action_missing_name(self):
         """Example FAIL POST /customers/v*/{id}/execute/action2"""
