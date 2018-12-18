@@ -580,3 +580,124 @@ class TestCrudResourceModelSchemaValidatorAndAuth(
         cu = self.create_customer()
         self.webserver.post_json('/logout', {}, status=302)
         self.webserver.get(self.path % cu.id, status=403)
+
+
+class CrudResourceAction:
+
+    def create_customer(self, name="bob", tag_name="green", zipcode="000"):
+        """Create a dummy customer record"""
+        tag = self.registry.Tag.insert(name=tag_name)
+        customer = self.registry.Customer.insert(name=name)
+        customer.tags.append(tag)
+        city = self.registry.City.insert(name="nowhere", zipcode=zipcode)
+        self.registry.Address.insert(
+            customer=customer, city=city, street="Dead end street")
+        return customer
+
+    def test_collection_action(self):
+        """Example collection POST /customers/v*/action/action1"""
+        collection_path = self.collection_path + '/action/action1'
+        response = self.webserver.post(collection_path)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body, 'Action 1')
+
+    def test_collection_action_post_on_path(self):
+        """Example collection POST /customers/v*/id/action/action1"""
+        cu = self.create_customer()
+        path = self.path + '/action/action1'
+        fail = self.webserver.get(path % cu.id)
+        self.assertEqual(fail.status_code, 404)
+
+    def test_collection_action_get(self):
+        """Example collection GET /customers/v*/action/action1"""
+        collection_path = self.collection_path + '/action/action1'
+        fail = self.webserver.get(collection_path, status=404)
+        self.assertEqual(fail.status_code, 404)
+
+    def test_collection_action_put(self):
+        """Example collection PUT /customers/v*/action/action1"""
+        collection_path = self.collection_path + '/action/action1'
+        fail = self.webserver.put(collection_path, status=404)
+        self.assertEqual(fail.status_code, 404)
+
+    def test_collection_action_patch(self):
+        """Example collection PATCH /customers/v*/action/action1"""
+        collection_path = self.collection_path + '/action/action1'
+        fail = self.webserver.patch(collection_path, status=404)
+        self.assertEqual(fail.status_code, 404)
+
+    def test_collection_action_delete(self):
+        """Example collection DELETE /customers/v*/action/action1"""
+        collection_path = self.collection_path + '/action/action1'
+        fail = self.webserver.delete(collection_path, status=404)
+        self.assertEqual(fail.status_code, 404)
+
+    def test_action(self):
+        """Example POST /customers/v*/{id}/action/action2"""
+        cu = self.create_customer()
+        path = self.path + '/action/action2'
+        response = self.webserver.get(path % cu.id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body, 'Action 2')
+
+    def test_action_post_on_collection_path(self):
+        """Example collection POST /customers/v*/action/action2"""
+        path = self.collection_path + '/action/action2'
+        fail = self.webserver.get(path, status=404)
+        self.assertEqual(fail.status_code, 404)
+
+    def test_action_get(self):
+        """Example GET /customers/v*/{id}/action/action2"""
+        cu = self.create_customer()
+        path = self.path + '/action/action2'
+        fail = self.webserver.get(path % cu.id, status=404)
+        self.assertEqual(fail.status_code, 404)
+
+    def test_action_put(self):
+        """Example PUT /customers/v*/{id}/action/action2"""
+        cu = self.create_customer()
+        path = self.path + '/action/action2'
+        fail = self.webserver.put(path % cu.id, status=404)
+        self.assertEqual(fail.status_code, 404)
+
+    def test_action_patch(self):
+        """Example PATCH /customers/v*/{id}/action/action2"""
+        cu = self.create_customer()
+        path = self.path + '/action/action2'
+        fail = self.webserver.patch(path % cu.id, status=404)
+        self.assertEqual(fail.status_code, 404)
+
+    def test_action_delete(self):
+        """Example DELETE /customers/v*/{id}/action/action2"""
+        cu = self.create_customer()
+        path = self.path + '/action/action2'
+        fail = self.webserver.delete(path % cu.id, status=404)
+        self.assertEqual(fail.status_code, 404)
+
+
+class TestCrudResourceAction1(CrudResourceAction, CrudResourceSchema,
+                              PyramidDBTestCase):
+    """Test Customers and Addresses from
+    test_bloks/test_7/views.py
+    """
+
+    def setUp(self):
+        super(TestCrudResourceAction1, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_7',))
+        self.collection_path = '/customers/v7'
+        self.path = '/customers/v7/%s'
+
+
+class TestCrudResourceAction2(CrudResourceAction, CrudResourceSchema,
+                              PyramidDBTestCase):
+    """Test Customers and Addresses from
+    test_bloks/test_8/views.py
+    """
+
+    def setUp(self):
+        super(TestCrudResourceAction2, self).setUp()
+        self.registry = self.init_registry(None)
+        self.registry.upgrade(install=('test_rest_api_8',))
+        self.collection_path = '/customers/v8'
+        self.path = '/customers/v8/%s'
