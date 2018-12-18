@@ -179,17 +179,11 @@ def add_execute_on_crud_resource(cls, **kwargs):
         if 'factory' not in kwargs:
             service_kwargs['factory'] = cls
 
-        if (
-            hasattr(method, 'is_a_crud_resource_execute_on_collection') and
-            method.is_a_crud_resource_execute_on_collection
-        ):
+        if getattr(method, 'is_a_crud_resource_execute_on_collection', None):
             service_name = 'collection_' + cls.__name__.lower() + '_execute_'
             service_name += method.crud_resource_execute_name
             service_kwargs['path'] = service_kwargs.pop('collection_path')
-        elif (
-            hasattr(method, 'is_a_crud_resource_execute') and
-            method.is_a_crud_resource_execute
-        ):
+        elif getattr(method, 'is_a_crud_resource_execute', None):
             service_name = cls.__name__.lower() + '_execute_'
             service_name += method.crud_resource_execute_name
             del service_kwargs['collection_path']
