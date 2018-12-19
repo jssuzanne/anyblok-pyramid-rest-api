@@ -370,6 +370,7 @@ class CrudResourceSchema:
 
         response = self.webserver.delete(path)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body, 1)
         self.assertEqual(int(response.headers.get('X-Total-Records')), 1)
         self.assertEqual(int(response.headers.get('X-Count-Records')), 1)
 
@@ -377,13 +378,13 @@ class CrudResourceSchema:
         self.assertEqual(response.status_code, 200)
         self.assertEqual(int(response.headers.get('X-Total-Records')), 0)
         self.assertEqual(int(response.headers.get('X-Count-Records')), 0)
-        self.assertEqual(response.json_body, [])
 
     def test_customer_collection_delete_no_entry_found(self):
         """Customer FAILED DELETE /customers?filter[id][eq]=0"""
         path = self.collection_path + '?filter[id][eq]=0'
         response = self.webserver.delete(path)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json_body, 0)
         self.assertEqual(int(response.headers.get('X-Total-Records')), 0)
         self.assertEqual(int(response.headers.get('X-Count-Records')), 0)
 

@@ -19,7 +19,7 @@ from .validator import (
     collection_get_validator, collection_post_validator, get_validator,
     delete_validator, put_validator, patch_validator, execute_validator,
     collection_execute_validator, collection_put_validator,
-    collection_patch_validator
+    collection_patch_validator, collection_delete_validator
 )
 from marshmallow import ValidationError
 from contextlib import contextmanager
@@ -236,6 +236,7 @@ class CrudResource:
       - has_collection_post: bool default True
       - has_collection_patch: bool default True
       - has_collection_put: bool default True
+      - has_collection_delete: bool default True
       - has_get: bool default True
       - has_delete: bool default True
       - has_patch: bool default True
@@ -254,6 +255,8 @@ class CrudResource:
                                     by default use default_serialize_schema
       - serialize_collection_put: method of AnyBlokMarshmallow schema
                                   by default use default_serialize_schema
+      - serialize_collection_delete: method of AnyBlokMarshmallow schema
+                                     by default use default_serialize_schema
       - serialize_get: method of AnyBlokMarshmallow schema, by default use
                        default_serialize_schema
       - serialize_delete: method of AnyBlokMarshmallow schema, by default use
@@ -273,6 +276,8 @@ class CrudResource:
                                       by default use default_deserialize_schema
       - deserialize_collection_put: method of AnyBlokMarshmallow schema,
                                     by default use default_deserialize_schema
+      - deserialize_collection_delete: method of AnyBlokMarshmallow schema,
+                                       by default use default_deserialize_schema
       - deserialize_patch: method of AnyBlokMarshmallow schema,
                            by default use default_deserialize_schema
       - deserialize_put: method of AnyBlokMarshmallow schema,
@@ -299,6 +304,7 @@ class CrudResource:
     * update
     * collection_update
     * delete_entry
+    * delete_entries
     * get_model_name:
 
     You can update the querystring to add an adapter in the resource::
@@ -340,6 +346,7 @@ class CrudResource:
     has_collection_post = True
     has_collection_patch = True
     has_collection_put = True
+    has_collection_delete = True
     has_get = True
     has_delete = True
     has_patch = True
@@ -541,20 +548,20 @@ class CrudResource:
             if item:
                 return self.serialize('collection_post', item)
 
-    def collection_update(self, items, params=None):
-        for item in items:
+    def collection_update(self, query, params=None):
+        items = []
+        for item in query:
             self.update(item, params=params)
+            items.append(item)
+
+        return items
 
     @cornice_view(validators=(collection_patch_validator,), permission="update")
     def collection_patch(self):
         self.view_is_activated(self.has_collection_patch)
         if not self.request.errors:
             query = self.get_querystring('collection_patch')
-            if not query.count():
-                return []
-
-            items = query.all()
-            self.collection_update(items, params=self.body)
+            items = self.collection_update(query, params=self.body)
             return self.serialize('collection_patch', items)
 
     @cornice_view(validators=(collection_put_validator,), permission="update")
@@ -562,12 +569,23 @@ class CrudResource:
         self.view_is_activated(self.has_collection_put)
         if not self.request.errors:
             query = self.get_querystring('collection_put')
-            if not query.count():
-                return []
-
-            items = query.all()
-            self.collection_update(items, params=self.body)
+            items = self.collection_update(query, params=self.body)
             return self.serialize('collection_put', items)
+
+    def delete_entries(self, query):
+        count = query.count()
+        for item in query:
+            self.delete_entry(item)
+
+        return count
+
+    @cornice_view(validators=(collection_delete_validator,),
+                  permission="delete")
+    def collection_delete(self):
+        self.view_is_activated(self.has_collection_delete)
+        if not self.request.errors:
+            query = self.get_querystring('collection_delete')
+            return self.delete_entries(query)
 
     @cornice_view(validators=(get_validator,), permission="read")
     def get(self):

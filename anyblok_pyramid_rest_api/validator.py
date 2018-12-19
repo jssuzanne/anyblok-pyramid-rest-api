@@ -188,6 +188,13 @@ def collection_put_validator(request, deserializer=None, klass=None, **kwargs):
     klass.apply_validator_schema(request, 'body', Schema, opts, base)
 
 
+def collection_delete_validator(request, deserializer=None, **kwargs):
+    if deserializer is None:
+        deserializer = extract_cstruct
+
+    deserializer(request)
+
+
 def get_validator(request, deserializer=None, klass=None, **kwargs):
     if deserializer is None:
         deserializer = extract_cstruct
