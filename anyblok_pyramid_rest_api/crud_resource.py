@@ -43,10 +43,7 @@ def saved_errors_in_request(request):
 def get_path(request):
     """Ensure we get a valid path
     """
-    if 'path' in request.validated.keys():
-        return request.validated.get('path')
-    else:
-        return request.matchdict
+    return request.validated.get('path', request.matchdict)
 
 
 def update_from_query_string(request, Model, query, adapter):
@@ -158,7 +155,6 @@ def add_execute_on_crud_resource(cls, **kwargs):
     for attr in dir(cls):
         method = getattr(cls, attr)
         service_kwargs = kwargs.copy()
-        service_name = None
 
         # auto-wire klass as its own view factory, unless one
         # is explicitly declared.
@@ -173,18 +169,15 @@ def add_execute_on_crud_resource(cls, **kwargs):
             service_name = cls.__name__.lower() + '_execute_'
             service_name += method.crud_resource_execute_name
             del service_kwargs['collection_path']
+        else:
+            continue
 
-        if service_name:
-            service_kwargs['path'] += '/execute/'
-            service_kwargs['path'] += method.crud_resource_execute_name
-            service = services[service_name] = Service(
-                name=service_name, depth=2, **service_kwargs)
-            views = getattr(method, '__views__', [])
-            if views:
-                for view_args in views:
-                    service.add_view('post', attr, klass=cls, **view_args)
-            else:
-                service.add_view('post', attr, klass=cls)
+        service_kwargs['path'] += '/execute/'
+        service_kwargs['path'] += method.crud_resource_execute_name
+        service = services[service_name] = Service(
+            name=service_name, depth=2, **service_kwargs)
+        for view_args in method.__views__:
+            service.add_view('post', attr, klass=cls, **view_args)
 
     cls._services.update(services)
     return cls
@@ -614,10 +607,8 @@ class CrudResource:
             return {}
 
     def update(self, item, params=None):
-        if params is None:
-            return item
-
-        item.update(**params)
+        if params:
+            item.update(**params)
 
     @cornice_view(validators=(patch_validator,), permission="update")
     def patch(self):
