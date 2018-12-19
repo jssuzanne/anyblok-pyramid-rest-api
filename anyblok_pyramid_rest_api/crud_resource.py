@@ -554,7 +554,10 @@ class CrudResource:
         self.view_is_activated(self.has_collection_patch)
         if not self.request.errors:
             query = self.get_querystring('collection_patch')
-            items = self.collection_update(query, params=self.body)
+            items = []
+            with saved_errors_in_request(self.request):
+                items = self.collection_update(query, params=self.body)
+
             return self.serialize('collection_patch', items)
 
     @cornice_view(validators=(collection_put_validator,), permission="update")
@@ -562,7 +565,10 @@ class CrudResource:
         self.view_is_activated(self.has_collection_put)
         if not self.request.errors:
             query = self.get_querystring('collection_put')
-            items = self.collection_update(query, params=self.body)
+            items = []
+            with saved_errors_in_request(self.request):
+                items = self.collection_update(query, params=self.body)
+
             return self.serialize('collection_put', items)
 
     def delete_entries(self, query):
@@ -576,9 +582,13 @@ class CrudResource:
                   permission="delete")
     def collection_delete(self):
         self.view_is_activated(self.has_collection_delete)
+        count = 0
         if not self.request.errors:
             query = self.get_querystring('collection_delete')
-            return self.delete_entries(query)
+            with saved_errors_in_request(self.request):
+                count = self.delete_entries(query)
+
+        return count
 
     @cornice_view(validators=(get_validator,), permission="read")
     def get(self):
