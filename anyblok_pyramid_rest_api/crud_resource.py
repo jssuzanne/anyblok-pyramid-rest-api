@@ -18,7 +18,7 @@ from types import MethodType
 from .validator import (
     collection_get_validator, collection_post_validator, get_validator,
     delete_validator, put_validator, patch_validator, execute_validator,
-    collection_execute_validator
+    collection_execute_validator, collection_put_validator
 )
 from marshmallow import ValidationError
 from contextlib import contextmanager
@@ -198,73 +198,141 @@ def resource(depth=2, **kwargs):
 
     return wrapper
 
-# HOOK
-# * deactivate some access
-#   - has_collection_get: bool default True
-#   - has_collection_post: bool default True
-#   - has_get: bool default True
-#   - has_delete: bool default True
-#   - has_patch: bool default True
-#   - has_put: bool default True
-# * get schema
-#   - default_schema: classmethod of AnyBlokMarshmallow schema, by default use
-#     model to defined it
-# * get serialize schema
-#   - default_serialize_schema: method of AnyBlokMarshmallow schema, by
-#     default use default_schema
-#   - serialize_collection_get: method of AnyBlokMarshmallow schema,
-#                               by default use default_serialize_schema
-#   - serialize_collection_post: method of AnyBlokMarshmallow schem
-#                                by default use default_serialize_schema
-#   - serialize_get: method of AnyBlokMarshmallow schema, by default use
-#     default_serialize_schema
-#   - serialize_delete: method of AnyBlokMarshmallow schema, by default use
-#     default_serialize_schema
-#   - serialize_patch: method of AnyBlokMarshmallow schema, by default use
-#     default_serialize_schema
-#   - serialize_put: method of AnyBlokMarshmallow schema, by default use
-#     default_serialize_schema
-# * get serialize opts
-#   - get_serialize_opts: method return dict of option to use
-# * get deserialize schema
-#   - default_deserialize_schema: method of AnyBlokMarshmallow schema, by
-#     default use default_schema
-#   - deserialize_collection_post: method of AnyBlokMarshmallow schema,
-#                                  by default use default_deserialize_schema
-#   - deserialize_patch: method of AnyBlokMarshmallow schema,
-#                        by default use default_deserialize_schema
-#   - deserialize_put: method of AnyBlokMarshmallow schema,
-#                      by default use default_deserialize_schema
-# * get deserialize opts
-#   - get_deserialize_opts: method return dict of option to use
-# * get path schema
-#   - default_path_schema: method of AnyBlokMarshmallow schema, by default use
-#     default_schema
-#   - path_get: method of AnyBlokMarshmallow schema, by default use
-#     default_serialize_schema
-#   - path_delete: method of AnyBlokMarshmallow schema, by default use
-#     default_serialize_schema
-#   - path_patch: method of AnyBlokMarshmallow schema, by default use
-#     default_serialize_schema
-#   - path_put: method of AnyBlokMarshmallow schema, by default use
-#     default_serialize_schema
-#   - path_execute: method of AnyBlokMarshmallow schema, by default use
-#     default_serialize_schema
-# * get path opts
-#   - get_path_opts: method return dict of option to use
-# * update_collection_get_filter: method to improve query to filter
-# * create
-# * update
-# * delete_entry
-# * get_model_name:
-
 
 class CrudResource:
+    """Main class to define a RESTFUL API on an AnyBlok resource
+
+    ::
+
+        from anyblok_pyramid_rest_api.crud_resource import (
+            CrudResource, resource)
+        from anyblok_pyramid import current_blok
+
+        @resource(
+            collection_path='/myresourcepaths'
+            path='/myresourcepath/{my model pk},
+            installed_blok=current_blok()
+        )
+        class MyResource(CrudResource):
+            model = 'MyModel'
+
+    This action create view to acces on the AnyBlok Model (MyModel):
+
+    * collection_get: validate the querystring, serialize the output
+    * collection_post: deserialize the body input, serialize the output
+    * collection_put: validate the querystring, serialize the output
+    * get: validate the path, deserialize the body, serialize the output
+    * patch: validate the path, deserialize the body, serialize the output
+    * put: validate the path, deserialize the body, serialize the output
+    * delete: validate the path
+
+    The Serialization and Deserialization is done by the MarshMallow Schema.
+    By default the schema is created by AnyBlok MarshMallow, but the schema
+    can be overwritten
+
+    * deactivate some access
+      - has_collection_get: bool default True
+      - has_collection_post: bool default True
+      - has_collection_put: bool default True
+      - has_get: bool default True
+      - has_delete: bool default True
+      - has_patch: bool default True
+      - has_put: bool default True
+    * get schema
+      - default_schema: classmethod of AnyBlokMarshmallow schema, by default use
+        model to defined it
+    * get serialize schema
+      - default_serialize_schema: method of AnyBlokMarshmallow schema, by
+        default use default_schema
+      - serialize_collection_get: method of AnyBlokMarshmallow schema,
+                                  by default use default_serialize_schema
+      - serialize_collection_post: method of AnyBlokMarshmallow schema
+                                   by default use default_serialize_schema
+      - serialize_collection_put: method of AnyBlokMarshmallow schema
+                                  by default use default_serialize_schema
+      - serialize_get: method of AnyBlokMarshmallow schema, by default use
+                       default_serialize_schema
+      - serialize_delete: method of AnyBlokMarshmallow schema, by default use
+                          default_serialize_schema
+      - serialize_patch: method of AnyBlokMarshmallow schema, by default use
+                         default_serialize_schema
+      - serialize_put: method of AnyBlokMarshmallow schema, by default use
+                       default_serialize_schema
+    * get serialize opts
+      - get_serialize_opts: method return dict of option to use
+    * get deserialize schema
+      - default_deserialize_schema: method of AnyBlokMarshmallow schema, by
+                                    default use default_schema
+      - deserialize_collection_post: method of AnyBlokMarshmallow schema,
+                                     by default use default_deserialize_schema
+      - deserialize_collection_put: method of AnyBlokMarshmallow schema,
+                                    by default use default_deserialize_schema
+      - deserialize_patch: method of AnyBlokMarshmallow schema,
+                           by default use default_deserialize_schema
+      - deserialize_put: method of AnyBlokMarshmallow schema,
+                         by default use default_deserialize_schema
+    * get deserialize opts
+      - get_deserialize_opts: method return dict of option to use
+    * get path schema
+      - default_path_schema: method of AnyBlokMarshmallow schema, by default use
+                             default_schema
+      - path_get: method of AnyBlokMarshmallow schema, by default use
+                  default_serialize_schema
+      - path_delete: method of AnyBlokMarshmallow schema, by default use
+                     default_serialize_schema
+      - path_patch: method of AnyBlokMarshmallow schema, by default use
+                    default_serialize_schema
+      - path_put: method of AnyBlokMarshmallow schema, by default use
+                  default_serialize_schema
+      - path_execute: method of AnyBlokMarshmallow schema, by default use
+                      default_serialize_schema
+    * get path opts
+      - get_path_opts: method return dict of option to use
+    * update_collection_get_filter: method to improve query to filter
+    * create
+    * update
+    * collection_update
+    * delete_entry
+    * get_model_name:
+
+    You can update the querystring to add an adapter in the resource::
+
+        @resource(...)
+        class MyResource(CrudResource):
+            ...
+
+            class adapter_cls(Adapter):
+                # See the adapter definition
+
+    Some http post action can be added with the decorator execute::
+
+        @resource(...)
+        class MyResource(CrudResource):
+            ...
+
+            @CrudResource.execute('action_name')  # schema is optional
+            def post_foo_bar(self):
+                # path/execute/action_name
+                querystring = self.get_querystring('action_name')
+                body = self.body
+                ...
+
+            @CrudResource.execute('other_action_name',
+                                  collection=True)  # schema is optional
+            def post_foo_bar(self):
+                # collection_path/execute/other_action_name
+                body = self.body
+                Model = self.get_model('other_action_name')
+                item = get_item(self.request, Model)
+                ...
+    """
+
     model = None
     adapter_cls = None
     cache_default_schema = True  # TODO
     has_collection_get = True
     has_collection_post = True
+    has_collection_put = True
     has_get = True
     has_delete = True
     has_patch = True
@@ -373,6 +441,8 @@ class CrudResource:
         opts = {}
         if rest_action == 'collection_get':
             opts['many'] = True
+        elif rest_action == 'collection_put':
+            opts['many'] = True
 
         return opts
 
@@ -459,6 +529,22 @@ class CrudResource:
 
             if item:
                 return self.serialize('collection_post', item)
+
+    def collection_update(self, items, params=None):
+        for item in items:
+            self.update(item, params=params)
+
+    @cornice_view(validators=(collection_put_validator,), permission="update")
+    def collection_put(self):
+        self.view_is_activated(self.has_collection_put)
+        if not self.request.errors:
+            query = self.get_querystring('collection_put')
+            if not query.count():
+                return []
+
+            items = query.all()
+            self.collection_update(items, params=self.body)
+            return self.serialize('collection_put', items)
 
     @cornice_view(validators=(get_validator,), permission="read")
     def get(self):

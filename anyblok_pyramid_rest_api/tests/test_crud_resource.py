@@ -337,7 +337,8 @@ class CrudResourceSchema:
         response = self.webserver.head(path)  # fix headers
         response = self.webserver.put_json(path, {'name': 'bobby'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json_body.get('name'), "bobby")
+        self.assertEqual(len(response.json_body), 1)
+        self.assertEqual(response.json_body[0].get('name'), "bobby")
 
     def test_customer_collection_patch(self):
         """Customer PATCH /customers?filter[id][eq]={id}"""
