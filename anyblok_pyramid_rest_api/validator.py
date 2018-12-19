@@ -163,6 +163,19 @@ def collection_post_validator(request, deserializer=None, klass=None, **kwargs):
     klass.apply_validator_schema(request, 'body', Schema, opts, base)
 
 
+def collection_patch_validator(request, deserializer=None, klass=None,
+                               **kwargs):
+    if deserializer is None:
+        deserializer = extract_cstruct
+
+    base = deserializer(request)
+    # validate the body
+    model_name = klass.get_model_name(request, base)
+    Schema = klass.get_deserialize_schema('collection_patch', model_name)
+    opts = klass.get_deserialize_opts('collection_patch')
+    klass.apply_validator_schema(request, 'body', Schema, opts, base)
+
+
 def collection_put_validator(request, deserializer=None, klass=None, **kwargs):
     if deserializer is None:
         deserializer = extract_cstruct

@@ -18,7 +18,8 @@ from types import MethodType
 from .validator import (
     collection_get_validator, collection_post_validator, get_validator,
     delete_validator, put_validator, patch_validator, execute_validator,
-    collection_execute_validator, collection_put_validator
+    collection_execute_validator, collection_put_validator,
+    collection_patch_validator
 )
 from marshmallow import ValidationError
 from contextlib import contextmanager
@@ -233,6 +234,7 @@ class CrudResource:
     * deactivate some access
       - has_collection_get: bool default True
       - has_collection_post: bool default True
+      - has_collection_patch: bool default True
       - has_collection_put: bool default True
       - has_get: bool default True
       - has_delete: bool default True
@@ -248,6 +250,8 @@ class CrudResource:
                                   by default use default_serialize_schema
       - serialize_collection_post: method of AnyBlokMarshmallow schema
                                    by default use default_serialize_schema
+      - serialize_collection_patch: method of AnyBlokMarshmallow schema
+                                    by default use default_serialize_schema
       - serialize_collection_put: method of AnyBlokMarshmallow schema
                                   by default use default_serialize_schema
       - serialize_get: method of AnyBlokMarshmallow schema, by default use
@@ -265,6 +269,8 @@ class CrudResource:
                                     default use default_schema
       - deserialize_collection_post: method of AnyBlokMarshmallow schema,
                                      by default use default_deserialize_schema
+      - deserialize_collection_patch: method of AnyBlokMarshmallow schema,
+                                      by default use default_deserialize_schema
       - deserialize_collection_put: method of AnyBlokMarshmallow schema,
                                     by default use default_deserialize_schema
       - deserialize_patch: method of AnyBlokMarshmallow schema,
@@ -332,6 +338,7 @@ class CrudResource:
     cache_default_schema = True  # TODO
     has_collection_get = True
     has_collection_post = True
+    has_collection_patch = True
     has_collection_put = True
     has_get = True
     has_delete = True
@@ -443,6 +450,8 @@ class CrudResource:
             opts['many'] = True
         elif rest_action == 'collection_put':
             opts['many'] = True
+        elif rest_action == 'collection_patch':
+            opts['many'] = True
 
         return opts
 
@@ -464,7 +473,9 @@ class CrudResource:
     @classmethod
     def get_deserialize_opts(cls, rest_action):
         opts = {}
-        if rest_action == 'patch':
+        if rest_action == 'collection_patch':
+            opts['partial'] = True
+        elif rest_action == 'patch':
             opts['partial'] = True
 
         return opts
@@ -533,6 +544,18 @@ class CrudResource:
     def collection_update(self, items, params=None):
         for item in items:
             self.update(item, params=params)
+
+    @cornice_view(validators=(collection_patch_validator,), permission="update")
+    def collection_patch(self):
+        self.view_is_activated(self.has_collection_patch)
+        if not self.request.errors:
+            query = self.get_querystring('collection_patch')
+            if not query.count():
+                return []
+
+            items = query.all()
+            self.collection_update(items, params=self.body)
+            return self.serialize('collection_patch', items)
 
     @cornice_view(validators=(collection_put_validator,), permission="update")
     def collection_put(self):
