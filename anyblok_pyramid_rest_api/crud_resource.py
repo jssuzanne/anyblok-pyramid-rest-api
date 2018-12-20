@@ -476,7 +476,7 @@ class CrudResource:
         if rest_action == 'collection_patch':
             opts['partial'] = True
             opts['many'] = True
-        if rest_action == 'collection_put':
+        elif rest_action == 'collection_put':
             opts['many'] = True
         elif rest_action == 'collection_delete':
             opts['many'] = True
