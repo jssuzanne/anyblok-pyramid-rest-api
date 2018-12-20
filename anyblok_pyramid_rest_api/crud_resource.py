@@ -32,11 +32,14 @@ def saved_errors_in_request(request):
     try:
         yield
     except Exception as e:
-        request.anyblok.registry.rollback()
         logger.exception(e)
         request.errors.add(
             'body', '500 Internal Server Error', str(e))
         request.errors.status = 500
+    finally:
+        if request.errors:
+            logger.debug('Request error found: rollback the registry')
+            request.anyblok.registry.rollback()
 
 
 def get_path(request):
@@ -457,7 +460,7 @@ class CrudResource:
             with saved_errors_in_request(self.request):
                 item = self.create(Model, params=self.body)
 
-            if item:
+            if item and not self.request.errors:
                 return self.serialize('collection_post', item)
 
     @cornice_view(validators=(get_validator,), permission="read")
