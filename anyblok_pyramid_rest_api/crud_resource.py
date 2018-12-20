@@ -475,6 +475,12 @@ class CrudResource:
         opts = {}
         if rest_action == 'collection_patch':
             opts['partial'] = True
+            opts['many'] = True
+        if rest_action == 'collection_put':
+            opts['many'] = True
+        elif rest_action == 'collection_delete':
+            opts['many'] = True
+            opts['context'] = {'only_primary_key': True}
         elif rest_action == 'patch':
             opts['partial'] = True
 
@@ -541,11 +547,28 @@ class CrudResource:
             if item:
                 return self.serialize('collection_post', item)
 
-    def collection_update(self, query, params=None):
+    def collection_update(self, Model, body):
         items = []
-        for item in query:
-            self.update(item, params=params)
-            items.append(item)
+        for params in body:
+            try:
+                pks = {x: params[x] for x in Model.get_primary_keys()}
+            except KeyError as e:
+                self.request.errors.add(
+                    'body', 'Validation Error',
+                    'No primary key found %r to get the item on %s' % (
+                        e.args, Model))
+                self.request.errors.status = 400
+            else:
+                item = Model.from_primary_keys(**pks)
+                if item:
+                    self.update(item, params=params)
+                    items.append(item)
+                else:
+                    self.request.errors.add(
+                        'body', 'Validation Error',
+                        'The primary key found %r does not exist on %s' % (
+                            pks, Model))
+                    self.request.errors.status = 400
 
         return items
 
@@ -553,10 +576,10 @@ class CrudResource:
     def collection_patch(self):
         self.view_is_activated(self.has_collection_patch)
         if not self.request.errors:
-            query = self.get_querystring('collection_patch')
             items = []
+            Model = self.get_model('collection_patch')
             with saved_errors_in_request(self.request):
-                items = self.collection_update(query, params=self.body)
+                items = self.collection_update(Model, self.body)
 
             return self.serialize('collection_patch', items)
 
@@ -564,19 +587,37 @@ class CrudResource:
     def collection_put(self):
         self.view_is_activated(self.has_collection_put)
         if not self.request.errors:
-            query = self.get_querystring('collection_put')
             items = []
+            Model = self.get_model('collection_put')
             with saved_errors_in_request(self.request):
-                items = self.collection_update(query, params=self.body)
+                items = self.collection_update(Model, self.body)
 
             return self.serialize('collection_put', items)
 
-    def delete_entries(self, query):
-        count = query.count()
-        for item in query:
-            self.delete_entry(item)
+    def delete_entries(self, Model, body):
+        for params in body:
+            try:
+                pks = {x: params[x] for x in Model.get_primary_keys()}
+            except KeyError as e:
+                self.request.errors.add(
+                    'body', 'Validation Error',
+                    'No primary key found %r to get the item on %s' % (
+                        e.args, Model))
+                self.request.errors.status = 400
+                return 0
+            else:
+                item = Model.from_primary_keys(**pks)
+                if item:
+                    self.delete_entry(item)
+                else:
+                    self.request.errors.add(
+                        'body', 'Validation Error',
+                        'The primary key found %r does not exist on %s' % (
+                            pks, Model))
+                    self.request.errors.status = 400
+                    return 0
 
-        return count
+        return len(body)
 
     @cornice_view(validators=(collection_delete_validator,),
                   permission="delete")
@@ -584,9 +625,9 @@ class CrudResource:
         self.view_is_activated(self.has_collection_delete)
         count = 0
         if not self.request.errors:
-            query = self.get_querystring('collection_delete')
+            Model = self.get_model('collection_delete')
             with saved_errors_in_request(self.request):
-                count = self.delete_entries(query)
+                count = self.delete_entries(Model, self.body)
 
         return count
 
