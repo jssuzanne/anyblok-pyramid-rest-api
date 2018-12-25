@@ -45,15 +45,15 @@ class TestCrudResourceBase(PyramidDBTestCase):
 
     def test_example_collection_post(self):
         """Example POST /examples/"""
-        response = self.webserver.post_json('/examples', {'name': 'plip'})
+        response = self.webserver.post_json('/examples', [{'name': 'plip'}])
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json_body.get('name'), "plip")
+        self.assertEqual(response.json_body[0]['name'], "plip")
 
     def test_example_collection_post_with_errors(self):
         """Example POST /examples/with/errors"""
         with LogCapture() as logs:
             fail = self.webserver.post_json(
-                '/examples/with/errors', {'name': 'plip'}, status=500)
+                '/examples/with/errors', [{'name': 'plip'}], status=500)
 
         self.assertEqual(fail.status_code, 500)
         self.assertEqual(fail.json_body.get('status'), 'error')
@@ -347,21 +347,21 @@ class CrudResourceSchema:
     def test_customer_collection_post(self):
         """Customer POST /customers"""
         response = self.webserver.post_json(self.collection_path,
-                                            {'name': 'plip'})
+                                            [{'name': 'plip'}])
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json_body.get('name'), "plip")
+        self.assertEqual(response.json_body[0]['name'], "plip")
 
     def test_customer_collection_post_partial(self):
         """Customer POST partial /customers"""
         response = self.webserver.post_json(self.collection_path,
-                                            {'name': 'plip'})
+                                            [{'name': 'plip'}])
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json_body.get('name'), "plip")
+        self.assertEqual(response.json_body[0]['name'], "plip")
 
     def test_customer_collection_post_empty_body(self):
         """Customer POST empty body /customers"""
         fail = self.webserver.post_json(
-            self.collection_path, {}, status=400)
+            self.collection_path, [{}], status=400)
         self.assertEqual(fail.status_code, 400)
         self.assertEqual(fail.json_body.get('status'), 'error')
         self.assertEqual(
@@ -374,7 +374,7 @@ class CrudResourceSchema:
     def test_customer_collection_post_bad_key_in_body(self):
         """Customer POST bad key in body /customers"""
         fail = self.webserver.post_json(
-            self.collection_path, {'unexistingkey': 'plip'}, status=400)
+            self.collection_path, [{'unexistingkey': 'plip'}], status=400)
         self.assertEqual(fail.status_code, 400)
         self.assertEqual(fail.json_body.get('status'), 'error')
         self.assertEqual(
