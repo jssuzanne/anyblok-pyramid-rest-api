@@ -100,12 +100,12 @@ class TestCrudResourceBase(PyramidDBTestCase):
                       logs.get_debug_messages())
 
     def test_example_collection_put_with_errors(self):
-        """Example PUT /examples/with/errors?filter[id][eq]={id}"""
+        """Example PUT /examples/with/errors"""
         ex = self.create_example()
         with LogCapture() as logs:
             response = self.webserver.put_json(
-                '/examples/with/errors?filter[id][eq]=%d' % ex.id,
-                {'name': 'plip'}, status=500)
+                '/examples/with/errors',
+                [{'id': ex.id, 'name': 'plip'}], status=500)
 
         self.assertEqual(response.status_code, 500)
         self.assertNotEqual(ex.name, "plip")
@@ -113,12 +113,12 @@ class TestCrudResourceBase(PyramidDBTestCase):
                       logs.get_debug_messages())
 
     def test_example_collection_patch_with_errors(self):
-        """Example PATCH /examples/with/errors?filter[id][eq]={id}"""
+        """Example PATCH /examples/with/errors"""
         ex = self.create_example()
         with LogCapture() as logs:
             response = self.webserver.patch_json(
-                '/examples/with/errors?filter[id][eq]=%d' % ex.id,
-                {'name': 'plip'}, status=500)
+                '/examples/with/errors',
+                [{'id': ex.id, 'name': 'plip'}], status=500)
 
         self.assertEqual(response.status_code, 500)
         self.assertNotEqual(ex.name, "plip")
@@ -153,12 +153,12 @@ class TestCrudResourceBase(PyramidDBTestCase):
                       logs.get_debug_messages())
 
     def test_example_collection_delete_with_errors(self):
-        """Example DELETE /examples/with/errors?filter[id][eq]={id}"""
+        """Example DELETE /examples/with/errors"""
         ex = self.create_example()
         with LogCapture() as logs:
             response = self.webserver.delete(
-                '/examples/with/errors?filter[id][eq]=%d' % ex.id,
-                status=500)
+                '/examples/with/errors',
+                [{'id': ex.id}], status=500)
 
         self.assertEqual(response.status_code, 500)
         self.assertEqual(
