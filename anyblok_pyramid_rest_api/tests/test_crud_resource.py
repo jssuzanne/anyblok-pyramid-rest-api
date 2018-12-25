@@ -156,13 +156,11 @@ class TestCrudResourceBase(PyramidDBTestCase):
         """Example DELETE /examples/with/errors"""
         ex = self.create_example()
         with LogCapture() as logs:
-            response = self.webserver.delete(
+            response = self.webserver.delete_json(
                 '/examples/with/errors',
                 [{'id': ex.id}], status=500)
 
         self.assertEqual(response.status_code, 500)
-        self.assertEqual(
-            self.registry.Test.query().filter_by(id=ex.id).count(), 1)
         self.assertIn('Request error found: rollback the registry',
                       logs.get_debug_messages())
 
