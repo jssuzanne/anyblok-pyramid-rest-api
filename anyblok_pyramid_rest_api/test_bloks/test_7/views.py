@@ -21,9 +21,10 @@ class CustomerResourceV7(CrudResource):
     model = 'Model.Customer'
     default_schema = CustomerSchema
 
-    @CrudResource.service('action1', collection=True, schema=ActionSchema)
+    @CrudResource.service('action1', method="get", collection=True,
+                          schema=ActionSchema)
     def do_action_1(self):
-        return self.body['name']
+        return 'test'
 
     @CrudResource.service('action2', schema=ActionSchema)
     def do_action_2(self):
