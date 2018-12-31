@@ -12,8 +12,8 @@ from .schema import CustomerSchema, ActionSchema
 
 
 @resource(
-    collection_path='/customers/v8',
-    path='/customers/v8/{id}',
+    collection_path='/customers/v9',
+    path='/customers/v9/{id}',
     service_path='%(path)s/other/%(name)s',
     installed_blok=current_blok()
 )
